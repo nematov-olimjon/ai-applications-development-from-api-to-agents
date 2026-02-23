@@ -65,111 +65,51 @@ class StreamingPIIGuardrail:
     """
 
     def __init__(self, buffer_size: int = 100, safety_margin: int = 20):
-        self.buffer_size = buffer_size
-        self.safety_margin = safety_margin
-        self.buffer = ""
+        #TODO:
+        # Initialize the guardrail:
+        # 1. Store buffer_size and safety_margin as instance attributes
+        # 2. Initialize an empty string buffer
+        raise NotImplementedError
 
     @property
     def _pii_patterns(self):
-        return {
-            'ssn': (
-                r'\b(\d{3}[-\s]?\d{2}[-\s]?\d{4})\b',
-                '[REDACTED-SSN]'
-            ),
-            'credit_card': (
-                r'\b(?:\d{4}[-\s]?){3}\d{4}\b|\b\d{13,19}\b',
-                '[REDACTED-CREDIT-CARD]'
-            ),
-            'license': (
-                r'\b[A-Z]{2}-DL-[A-Z0-9]+\b',
-                '[REDACTED-LICENSE]'
-            ),
-            'bank_account': (
-                r'\b(?:Bank\s+of\s+\w+\s*[-\s]*)?(?<!\d)(\d{10,12})(?!\d)\b',
-                '[REDACTED-ACCOUNT]'
-            ),
-            'date': (
-                r'\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\b|\b\d{1,2}/\d{1,2}/\d{4}\b|\b\d{4}-\d{2}-\d{2}\b',
-                '[REDACTED-DATE]'
-            ),
-            'cvv': (
-                r'(?:CVV:?\s*|CVV["\']\s*:\s*["\']\s*)(\d{3,4})',
-                r'CVV: [REDACTED]'
-            ),
-            'card_exp': (
-                r'(?:Exp(?:iry)?:?\s*|Expiry["\']\s*:\s*["\']\s*)(\d{2}/\d{2})',
-                r'Exp: [REDACTED]'
-            ),
-            'address': (
-                r'\b(\d+\s+[A-Za-z\s]+(?:Street|St\.?|Avenue|Ave\.?|Boulevard|Blvd\.?|Road|Rd\.?|Drive|Dr\.?|Lane|Ln\.?|Way|Circle|Cir\.?|Court|Ct\.?|Place|Pl\.?))\b',
-                '[REDACTED-ADDRESS]'
-            ),
-            'currency': (
-                r'\$[\d,]+\.?\d*',
-                '[REDACTED-AMOUNT]'
-            )
-        }
+        #TODO:
+        # Return a dict mapping pattern names to (regex_pattern, replacement) tuples.
+        # Include patterns for at least: ssn, credit_card, license, bank_account,
+        # date, cvv, card_exp, address, currency
+        # Hint: Use named groups or plain capturing groups with re.sub
+        raise NotImplementedError
 
     def _detect_and_redact_pii(self, text: str) -> str:
-        """Apply all PII patterns to redact sensitive information."""
-        cleaned_text = text
-        for pattern_name, (pattern, replacement) in self._pii_patterns.items():
-            if pattern_name.lower() in ['cvv', 'card_exp']:
-                cleaned_text = re.sub(pattern, replacement, cleaned_text, flags=re.IGNORECASE | re.MULTILINE)
-            else:
-                cleaned_text = re.sub(pattern, replacement, cleaned_text, flags=re.IGNORECASE | re.MULTILINE)
-        return cleaned_text
+        #TODO:
+        # Apply all PII patterns from _pii_patterns to `text` and return the redacted version.
+        # Hint: iterate over self._pii_patterns.items() and call re.sub for each
+        raise NotImplementedError
 
     def _has_potential_pii_at_end(self, text: str) -> bool:
-        """Check if text ends with a partial pattern that might be PII."""
-        partial_patterns = [
-            r'\d{3}[-\s]?\d{0,2}$',  # Partial SSN
-            r'\d{4}[-\s]?\d{0,4}$',  # Partial credit card
-            r'[A-Z]{1,2}-?D?L?-?[A-Z0-9]*$',  # Partial license
-            r'\(?\d{0,3}\)?[-.\s]?\d{0,3}$',  # Partial phone
-            r'\$[\d,]*\.?\d*$',  # Partial currency
-            r'\b\d{1,4}/\d{0,2}$',  # Partial date
-            r'CVV:?\s*\d{0,3}$',  # Partial CVV
-            r'Exp(?:iry)?:?\s*\d{0,2}$',  # Partial expiry
-            r'\d+\s+[A-Za-z\s]*$',  # Partial address
-        ]
-
-        for pattern in partial_patterns:
-            if re.search(pattern, text, re.IGNORECASE):
-                return True
-        return False
+        #TODO:
+        # Check whether `text` ends with a partial PII token that could be completed by the next chunk.
+        # Return True if a partial pattern is found at the end of text, False otherwise.
+        # Hint: define a list of partial-match regexes (e.g. r'\d{3}[-\s]?\d{0,2}$' for partial SSN)
+        raise NotImplementedError
 
     def process_chunk(self, chunk: str) -> str:
-        """Process a streaming chunk and return safe content that can be immediately output."""
-        if not chunk:
-            return chunk
-
-        self.buffer += chunk
-
-        if len(self.buffer) > self.buffer_size:
-            safe_output_length = len(self.buffer) - self.safety_margin
-
-            for i in range(safe_output_length - 1, max(0, safe_output_length - 20), -1):
-                if self.buffer[i] in ' \n\t.,;:!?':
-                    test_text = self.buffer[:i]
-                    if not self._has_potential_pii_at_end(test_text):
-                        safe_output_length = i
-                        break
-
-            text_to_output = self.buffer[:safe_output_length]
-            safe_output = self._detect_and_redact_pii(text_to_output)
-            self.buffer = self.buffer[safe_output_length:]
-            return safe_output
-
-        return ""
+        #TODO:
+        # Process a streaming chunk and return the portion that is safe to output immediately.
+        # 1. Append chunk to self.buffer
+        # 2. If buffer length exceeds buffer_size:
+        #    a. Set candidate split point = len(buffer) - safety_margin
+        #    b. Walk back from that point to find a word boundary (space / punctuation)
+        #       and verify _has_potential_pii_at_end is False at that boundary
+        #    c. Redact PII in buffer[:split_point] and return it; keep buffer[split_point:] for later
+        # 3. Return "" if the buffer is still too short to safely flush any content
+        raise NotImplementedError
 
     def finalize(self) -> str:
-        """Process any remaining content in the buffer at the end of streaming."""
-        if self.buffer:
-            final_output = self._detect_and_redact_pii(self.buffer)
-            self.buffer = ""
-            return final_output
-        return ""
+        #TODO:
+        # Flush and redact any content remaining in self.buffer after streaming ends.
+        # Reset the buffer and return the redacted text.
+        raise NotImplementedError
 
 
 SYSTEM_PROMPT = "You are a secure colleague directory assistant designed to help users find contact information for business purposes."
