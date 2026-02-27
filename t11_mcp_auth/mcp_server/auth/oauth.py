@@ -26,14 +26,12 @@ _jwks_cache: dict | None = None
 async def _get_jwks() -> dict:
     """Fetch and cache Keycloak public keys (JWKS)"""
     global _jwks_cache
-    if _jwks_cache is None:
-        print(f"🔑 Fetching JWKS from {JWKS_URL}")
-        async with httpx.AsyncClient() as client:
-            response = await client.get(JWKS_URL)
-            response.raise_for_status()
-            _jwks_cache = response.json()
-        print("🔑 JWKS cached successfully")
-    return _jwks_cache
+    #TODO:
+    # 1. If `_jwks_cache` is None — fetch it with an HTTP GET to `JWKS_URL`,
+    #    call `.raise_for_status()`, parse the JSON, and store it in `_jwks_cache`
+    #    Print "🔑 Fetching JWKS from ..." before and "🔑 JWKS cached successfully" after
+    # 2. Return `_jwks_cache`
+    raise NotImplementedError()
 
 
 # ==================== MIDDLEWARE ====================
@@ -51,42 +49,21 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         auth_header = request.headers.get("Authorization", "")
 
         # ── Step 1: Check header presence ──────────────────────────────
-        if not auth_header.startswith("Bearer "):
-            return JSONResponse(
-                {"error": "Unauthorized", "detail": "Missing or malformed Authorization header"},
-                status_code=401
-            )
+        #TODO: If `auth_header` doesn't start with "Bearer " — return a 401 JSONResponse
 
         token = auth_header.removeprefix("Bearer ")
 
         # ── Step 2: Validate JWT signature + claims ─────────────────────
-        try:
-            jwks = await _get_jwks()
-            claims = jwt.decode(
-                token,
-                jwks,
-                algorithms=["RS256"],
-                issuer=ISSUER,
-                options={"verify_aud": False}  # audience check not needed for our setup
-            )
-        except JWTError as e:
-            return JSONResponse(
-                {"error": "Unauthorized", "detail": f"Invalid token: {e}"},
-                status_code=401
-            )
+        #TODO:
+        # 1. Fetch JWKS via `_get_jwks()`
+        # 2. Decode the token with `jwt.decode` using algorithm `RS256`, the fetched JWKS,
+        #    `issuer=ISSUER`, and `options={"verify_aud": False}`
+        #    Wrap in try/except for `JWTError` and return a 401 JSONResponse on failure
 
         # ── Step 3: Check realm role ────────────────────────────────────
         # Keycloak embeds roles in: claims["realm_access"]["roles"]
-        realm_roles: list[str] = claims.get("realm_access", {}).get("roles", [])
-
-        if REQUIRED_ROLE not in realm_roles:
-            return JSONResponse(
-                {
-                    "error": "Forbidden",
-                    "detail": f"Role '{REQUIRED_ROLE}' is required. User has roles: {realm_roles}"
-                },
-                status_code=403
-            )
-
-        print(f"✅ Authenticated: {claims.get('preferred_username')} | roles: {realm_roles}")
-        return await call_next(request)
+        #TODO:
+        # 1. Extract the list of realm roles from the decoded claims
+        # 2. If `REQUIRED_ROLE` is not present — return a 403 JSONResponse listing the user's roles
+        # 3. Print the authenticated username and their roles, then pass the request to the next handler
+        raise NotImplementedError()

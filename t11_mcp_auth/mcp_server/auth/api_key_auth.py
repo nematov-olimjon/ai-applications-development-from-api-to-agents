@@ -12,10 +12,8 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next):
-        api_key = request.headers.get("X-API-Key")
-        if api_key != API_KEY:
-            return JSONResponse(
-                {"error": "Unauthorized", "detail": "Invalid or missing API key"},
-                status_code=401
-            )
-        return await call_next(request)
+        #TODO:
+        # 1. Read the `X-API-Key` header from `request.headers`
+        # 2. If it doesn't match `API_KEY` — return a 401 `JSONResponse` with an error message
+        # 3. Otherwise pass the request to the next handler and return its response
+        raise NotImplementedError()
