@@ -43,7 +43,30 @@ class CustomOpenAIClient(BaseOpenAIClient):
         # - Parse response
         # - Print response to console
         # - Return ASSISTANT message
-        raise NotImplementedError
+        headers = {
+            "Authorization": self._api_key,
+            "Content-Type": "application/json",
+        }
+
+        all_messages = [{"role": Role.SYSTEM.value, "content": self._system_prompt}] + [m.to_dict() for m in messages]
+
+        payload = {
+            "model": self._model_name,
+            "messages": all_messages,
+        }
+
+        resp = requests.post(self._endpoint, headers=headers, json=payload)
+
+        if resp.status_code != 200:
+            raise Exception(f"API request failed with status {resp.status_code}: {resp.text}")
+
+        data = resp.json()
+        if not data.get("choices"):
+            raise ValueError("API response contains no choices")
+
+        response_content = data["choices"][0]["message"]["content"]
+        print(response_content)
+        return Message(role=Role.ASSISTANT, content=response_content)
 
     async def stream_response(self, messages: list[Message], **kwargs) -> Message:
         """
@@ -73,4 +96,33 @@ class CustomOpenAIClient(BaseOpenAIClient):
         # - Parse response
         # - Print chunks to console
         # - Return ASSISTANT message
-        raise NotImplementedError
+        headers = {
+            "Authorization": self._api_key,
+            "Content-Type": "application/json",
+        }
+
+        all_messages = [{"role": Role.SYSTEM.value, "content": self._system_prompt}] + [m.to_dict() for m in messages]
+
+        payload = {
+            "model": self._model_name,
+            "messages": all_messages,
+            "stream": True,
+        }
+
+        full_response = ""
+        async with aiohttp.ClientSession() as session:
+            async with session.post(self._endpoint, headers=headers, json=payload) as resp:
+                async for line in resp.content:
+                    decoded_line = line.decode("utf-8").strip()
+                    if not decoded_line.startswith("data: "):
+                        continue
+                    data_str = decoded_line[len("data: "):]
+                    if data_str == "[DONE]":
+                        break
+                    chunk = json.loads(data_str)
+                    if chunk.get("choices") and chunk["choices"][0].get("delta", {}).get("content"):
+                        content = chunk["choices"][0]["delta"]["content"]
+                        print(content, end="", flush=True)
+                        full_response += content
+
+        return Message(role=Role.ASSISTANT, content=full_response)

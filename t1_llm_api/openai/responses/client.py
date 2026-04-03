@@ -33,7 +33,9 @@ class OpenAIResponsesClient(BaseOpenAIClient):
         # Call to __init__ of super class
         # Add OpenAI and AsyncOpenAI clients https://github.com/openai/openai-python?tab=readme-ov-file#usage
         # (In readme you can find samples with both of these clients)
-        raise NotImplementedError
+        super().__init__(endpoint, model_name, system_prompt, api_key)
+        self._client = OpenAI(api_key=api_key)
+        self._async_client = AsyncOpenAI(api_key=api_key)
 
     def response(self, messages: list[Message], **kwargs) -> Message:
         """
@@ -55,7 +57,17 @@ class OpenAIResponsesClient(BaseOpenAIClient):
         # - Call client
         # - Print response to console
         # - Return ASSISTANT message
-        raise NotImplementedError
+        input_messages = [{"role": m.role.value, "content": m.content} for m in messages]
+
+        result = self._client.responses.create(
+            model=self._model_name,
+            instructions=self._system_prompt,
+            input=input_messages,
+        )
+
+        response_content = result.output_text
+        print(response_content)
+        return Message(role=Role.ASSISTANT, content=response_content)
 
     async def stream_response(self, messages: list[Message], **kwargs) -> Message:
         """
@@ -81,4 +93,19 @@ class OpenAIResponsesClient(BaseOpenAIClient):
         # - Handle stream with events
         # - Print response to console
         # - Return ASSISTANT message
-        raise NotImplementedError
+        input_messages = [{"role": m.role.value, "content": m.content} for m in messages]
+
+        stream = self._async_client.responses.create(
+            model=self._model_name,
+            instructions=self._system_prompt,
+            input=input_messages,
+            stream=True,
+        )
+
+        full_response = ""
+        async for event in await stream:
+            if event.type == "response.output_text.delta":
+                print(event.delta, end="", flush=True)
+                full_response += event.delta
+
+        return Message(role=Role.ASSISTANT, content=full_response)

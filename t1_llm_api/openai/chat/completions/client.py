@@ -34,7 +34,9 @@ class OpenAIClient(BaseOpenAIClient):
         # Add OpenAI and AsyncOpenAI clients https://github.com/openai/openai-python?tab=readme-ov-file#usage
         # (In readme you can find samples with both of these clients)
         # Useful link with request/response samples https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create
-        raise NotImplementedError
+        super().__init__(endpoint, model_name, system_prompt, api_key)
+        self._client = OpenAI(api_key=api_key)
+        self._async_client = AsyncOpenAI(api_key=api_key)
 
     def response(self, messages: list[Message], **kwargs) -> Message:
         """
@@ -56,7 +58,16 @@ class OpenAIClient(BaseOpenAIClient):
         # - Call client
         # - Print response to console
         # - Return ASSISTANT message
-        raise NotImplementedError
+        all_messages = [{"role": Role.SYSTEM, "content": self._system_prompt}] + [m.to_dict() for m in messages]
+
+        completion = self._client.chat.completions.create(
+            model=self._model_name,
+            messages=all_messages,
+        )
+
+        response_content = completion.choices[0].message.content
+        print(response_content)
+        return Message(role=Role.ASSISTANT, content=response_content)
 
     async def stream_response(self, messages: list[Message], **kwargs) -> Message:
         """
@@ -82,4 +93,19 @@ class OpenAIClient(BaseOpenAIClient):
         # - Handle stream with chunks
         # - Print response to console
         # - Return ASSISTANT message
-        raise NotImplementedError
+        all_messages = [{"role": Role.SYSTEM, "content": self._system_prompt}] + [m.to_dict() for m in messages]
+
+        stream = await self._async_client.chat.completions.create(
+            model=self._model_name,
+            messages=all_messages,
+            stream=True,
+        )
+
+        full_response = ""
+        async for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                content = chunk.choices[0].delta.content
+                print(content, end="", flush=True)
+                full_response += content
+
+        return Message(role=Role.ASSISTANT, content=full_response)
