@@ -35,7 +35,9 @@ class AnthropicAIClient(AIClient):
         # Useful links with request/response samples:
         #   - https://docs.anthropic.com/en/api/overview
         #   - https://docs.anthropic.com/en/api/messages
-        raise NotImplementedError
+        super().__init__(endpoint, model_name, api_key, system_prompt)
+        self._client = Anthropic(api_key=api_key)
+        self._async_client = AsyncAnthropic(api_key=api_key)
 
     def response(self, messages: list[Message], **kwargs) -> Message:
         """
@@ -58,7 +60,15 @@ class AnthropicAIClient(AIClient):
         # - Call client
         # - Print response to console
         # - Return ASSISTANT message
-        raise NotImplementedError
+        message = self._client.messages.create(
+            system=self._system_prompt,
+            max_tokens=kwargs.get("max_tokens", 1024),
+            messages=[msg.to_dict() for msg in messages],
+            model=self._model_name,
+        )
+        response_content = "".join(block.text for block in message.content)
+        print(response_content)
+        return Message(role=Role.ASSISTANT, content=response_content)
 
     async def stream_response(self, messages: list[Message], **kwargs) -> Message:
         """
@@ -78,10 +88,16 @@ class AnthropicAIClient(AIClient):
             Listens for 'content_block_delta' events with text deltas.
             Each delta is printed to stdout as it arrives for real-time display.
         """
-        #TODO:
-        # - Add System prompt
-        # - Call client with streaming mode
-        # - Handle stream with chunks
-        # - Print response to console
-        # - Return ASSISTANT message
-        raise NotImplementedError
+        full_response = ""
+        async with self._async_client.messages.stream(
+            system=self._system_prompt,
+            max_tokens=kwargs.get("max_tokens", 1024),
+            messages=[msg.to_dict() for msg in messages],
+            model=self._model_name,
+        ) as stream:
+            async for text in stream.text_stream:
+                print(text, end="", flush=True)
+                full_response += text
+
+        return Message(role=Role.ASSISTANT, content=full_response)
+
