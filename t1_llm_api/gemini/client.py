@@ -28,10 +28,22 @@ class GeminiAIClient(AIClient):
             api_key (str): The Google API key for authentication.
             system_prompt (str): The system instruction to guide the model's behavior.
         """
-        #TODO:
-        # Call to __init__ of super class
-        # Add genai.Client https://ai.google.dev/gemini-api/docs/text-generation#python_4
-        raise NotImplementedError
+        super().__init__(endpoint, model_name, api_key, system_prompt)
+        self._client = genai.Client(api_key=api_key)
+
+    def _to_gemini_role(self, role: Role) -> str:
+        if role == Role.ASSISTANT:
+            return "model"
+        return "user"
+
+    def _build_contents(self, messages: list[Message]) -> list[types.Content]:
+        return [
+            types.Content(
+                role=self._to_gemini_role(m.role),
+                parts=[types.Part(text=m.content)],
+            )
+            for m in messages
+        ]
 
     def response(self, messages: list[Message], **kwargs) -> Message:
         """
@@ -48,12 +60,20 @@ class GeminiAIClient(AIClient):
             Gemini uses 'system_instruction' parameter for system-level guidance.
             The response is printed to stdout before being returned.
         """
-        #TODO:
-        # - Add System prompt
-        # - Call client
-        # - Print response to console
-        # - Return ASSISTANT message
-        raise NotImplementedError
+        contents = self._build_contents(messages)
+
+        result = self._client.models.generate_content(
+            model=self._model_name,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=self._system_prompt,
+                max_output_tokens=kwargs.get("max_tokens", 1024),
+            ),
+        )
+
+        response_content = result.text
+        print(response_content)
+        return Message(role=Role.ASSISTANT, content=response_content)
 
     async def stream_response(self, messages: list[Message], **kwargs) -> Message:
         """
@@ -73,10 +93,19 @@ class GeminiAIClient(AIClient):
             Uses the async streaming interface provided by the Gemini SDK.
             Each chunk's text is printed to stdout as it arrives.
         """
-        #TODO:
-        # - Add System prompt
-        # - Call client with streaming mode
-        # - Handle stream with chunks
-        # - Print response to console
-        # - Return ASSISTANT message
-        raise NotImplementedError
+        contents = self._build_contents(messages)
+
+        full_response = ""
+        async for chunk in self._client.aio.models.generate_content_stream(
+            model=self._model_name,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=self._system_prompt,
+                max_output_tokens=kwargs.get("max_tokens", 1024),
+            ),
+        ):
+            if chunk.text:
+                print(chunk.text, end="", flush=True)
+                full_response += chunk.text
+
+        return Message(role=Role.ASSISTANT, content=full_response)

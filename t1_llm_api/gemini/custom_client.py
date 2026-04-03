@@ -16,6 +16,21 @@ class CustomGeminiAIClient(AIClient):
     and handle its Server-Sent Events (SSE) streaming format.
     """
 
+    @staticmethod
+    def _to_gemini_role(role: Role) -> str:
+        if role == Role.ASSISTANT:
+            return "model"
+        return "user"
+
+    def _build_gemini_contents(self, messages: list[Message]) -> list[dict]:
+        return [
+            {
+                "role": self._to_gemini_role(m.role),
+                "parts": [{"text": m.content}],
+            }
+            for m in messages
+        ]
+
     def response(self, messages: list[Message], **kwargs) -> Message:
         """
         Get a synchronous response using raw HTTP POST request.
@@ -44,7 +59,37 @@ class CustomGeminiAIClient(AIClient):
         # - Parse response
         # - Print response to console
         # - Return ASSISTANT message
-        raise NotImplementedError
+        headers = {
+            "Content-Type": "application/json",
+        }
+
+        url = f"{self._endpoint}/{self._model_name}:generateContent?key={self._api_key}"
+
+        contents = self._build_gemini_contents(messages)
+
+        payload = {
+            "system_instruction": {
+                "parts": [{"text": self._system_prompt}]
+            },
+            "contents": contents,
+        }
+
+        resp = requests.post(url, headers=headers, json=payload)
+
+        if resp.status_code != 200:
+            raise Exception(f"API request failed with status {resp.status_code}: {resp.text}")
+
+        data = resp.json()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            raise ValueError("API response contains no candidates")
+
+        response_content = ""
+        for part in candidates[0].get("content", {}).get("parts", []):
+            response_content += part.get("text", "")
+
+        print(response_content)
+        return Message(role=Role.ASSISTANT, content=response_content)
 
     async def stream_response(self, messages: list[Message], **kwargs) -> Message:
         """
@@ -75,4 +120,36 @@ class CustomGeminiAIClient(AIClient):
         # - Parse response
         # - Print chunks to console
         # - Return ASSISTANT message
-        raise NotImplementedError
+        headers = {
+            "Content-Type": "application/json",
+        }
+
+        url = f"{self._endpoint}/{self._model_name}:streamGenerateContent?alt=sse&key={self._api_key}"
+
+        contents = self._build_gemini_contents(messages)
+
+        payload = {
+            "system_instruction": {
+                "parts": [{"text": self._system_prompt}]
+            },
+            "contents": contents,
+        }
+
+        full_response = ""
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as resp:
+                async for line in resp.content:
+                    decoded_line = line.decode("utf-8").strip()
+                    if not decoded_line.startswith("data: "):
+                        continue
+                    data_str = decoded_line[len("data: "):]
+                    chunk = json.loads(data_str)
+                    candidates = chunk.get("candidates", [])
+                    if candidates:
+                        for part in candidates[0].get("content", {}).get("parts", []):
+                            text = part.get("text", "")
+                            if text:
+                                print(text, end="", flush=True)
+                                full_response += text
+
+        return Message(role=Role.ASSISTANT, content=full_response)
