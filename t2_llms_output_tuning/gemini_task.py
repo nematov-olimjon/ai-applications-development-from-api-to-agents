@@ -39,5 +39,27 @@ run(
     print_request=True, # Switch to False if you do not want to see the request in console
     print_only_content=False, # Switch to True if you want to see only content from response
 
+    # All parameters below must be passed inside generationConfig={...}
 
+    # TODO 1: temperature — controls randomness (uncomment to try)
+    # generationConfig={"temperature": 0.0},
+    # generationConfig={"temperature": 2.0},
+
+    # TODO 2: topP — nucleus sampling (uncomment to try)
+    # generationConfig={"topP": 0.1},
+    # generationConfig={"topP": 0.95},
+
+    # TODO 3: topK — limits token selection to top K candidates (uncomment to try)
+    # generationConfig={"topK": 1},
+    # generationConfig={"topK": 64},
+
+    # TODO 4: maxOutputTokens — max response tokens (uncomment to try)
+    # generationConfig={"maxOutputTokens": 50},
+    # generationConfig={"maxOutputTokens": 2048},
+
+    # TODO 5: responseMimeType + responseSchema — structured output (uncomment to try)
+    # generationConfig={"responseMimeType": "application/json", "responseSchema": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "year": {"type": "integer"}}}}},
+
+    # TODO 7: thinkingConfig — extended thinking (uncomment to try)
+    # generationConfig={"thinkingConfig": {"thinkMode": "THINKING_MODE_ENABLED", "thinkBudget": 5000}},
 )

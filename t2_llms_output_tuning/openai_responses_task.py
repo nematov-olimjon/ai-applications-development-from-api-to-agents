@@ -44,4 +44,28 @@ run(
     print_request=True, # Switch to False if you do not want to see the request in console
     print_only_content=False, # Switch to True if you want to see only content from response
 
+    # TODO 1: temperature — controls randomness (uncomment to try)
+    # temperature=0.0,
+    # temperature=2.0,
+
+    # TODO 2: top_p — nucleus sampling (uncomment to try)
+    # top_p=0.1,
+    # top_p=0.9,
+
+    # TODO 3: max_output_tokens — max response tokens (uncomment to try)
+    # max_output_tokens=50,
+    # max_output_tokens=2048,
+
+    # TODO 4: text — structured output format (uncomment to try)
+    # text={"format": {"type": "json_schema", "name": "languages", "strict": True, "schema": {"type": "object", "properties": {"languages": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "year": {"type": "integer"}}, "required": ["name", "year"], "additionalProperties": False}}}, "required": ["languages"], "additionalProperties": False}}},
+
+    # TODO 5: truncation — controls how long contexts are handled (uncomment to try)
+    # truncation="auto",
+
+    # TODO 6: metadata — attach key-value pairs for tracking (uncomment to try)
+    # metadata={"project": "demo", "user": "student-1"},
+
+    # TODO 7: reasoning — extended thinking config (uncomment to try)
+    # reasoning={"effort": "high"},
+    # reasoning={"effort": "low"},
 )

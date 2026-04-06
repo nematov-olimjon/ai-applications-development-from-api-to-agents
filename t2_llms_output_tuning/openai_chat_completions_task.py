@@ -60,5 +60,39 @@ run(
     print_request=True, # Switch to False if you do not want to see the request in console
     print_only_content=False, # Switch to True if you want to see only content from response
 
+    # TODO 1: n — number of completions (uncomment to try)
+    # n=3
 
+    # TODO 2: temperature — controls randomness (uncomment to try)
+    # temperature=0.0,
+    # temperature=2.0,
+
+    # TODO 3: top_p — nucleus sampling (uncomment to try)
+    # top_p=0.1,
+    # top_p=0.9,
+
+    # TODO 4: max_tokens — max response tokens (uncomment to try)
+    # max_completion_tokens=50,
+    # max_completion_tokens=2048,
+
+    # TODO 5: stop — stop sequences (uncomment to try)
+    # stop=["5"],
+
+    # TODO 6: response_format — structured output (uncomment to try)
+    # response_format={"type": "json_schema", "json_schema": {"name": "languages", "strict": True, "schema": {"type": "object", "properties": {"languages": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "year": {"type": "integer"}}, "required": ["name", "year"], "additionalProperties": False}}}, "required": ["languages"], "additionalProperties": False}}},
+
+    # TODO 7: frequency_penalty — penalizes repeated tokens (uncomment to try)
+    # frequency_penalty=0.0,
+    # frequency_penalty=1.5,
+
+    # TODO 8: presence_penalty — penalizes already-seen tokens (uncomment to try)
+    # presence_penalty=0.0,
+    # presence_penalty=1.5,
+
+    # TODO 9: seed — deterministic output (uncomment to try)
+    # seed=42,
+
+    # TODO 10: reasoning_effort — controls thinking depth (uncomment to try)
+    # reasoning_effort="low",
+    # reasoning_effort="high",
 )
