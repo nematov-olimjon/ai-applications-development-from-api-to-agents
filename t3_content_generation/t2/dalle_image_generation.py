@@ -53,3 +53,22 @@ class Quality:
 #   - Use /v1/images/generations endpoint
 #   - The link with generated image will be returned in response
 
+
+if __name__ == "__main__":
+    client = OpenAIClientT3(endpoint=f"{OPENAI_HOST}/v1/images/generations")
+
+    response = client.call(
+        model="dall-e-3",
+        prompt="Smiling catdog",
+        # size=Size.square,
+        size=Size.width_rectangle,
+        # size=Size.height_rectangle,
+        # style=Style.natural,
+        style=Style.vivid,
+        quality=Quality.standard,
+        # quality=Quality.hd,
+    )
+
+    # Print the URL of the generated image
+    print("\n--- Generated Image URL ---")
+    print(response["data"][0]["url"])
